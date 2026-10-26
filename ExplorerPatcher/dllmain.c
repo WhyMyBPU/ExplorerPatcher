@@ -1932,6 +1932,70 @@ LRESULT CALLBACK Shell_TrayWndMouseProc(
     return CallNextHookEx(Shell_TrayWndMouseHook, nCode, wParam, lParam);
 }
 
+#pragma region "Respect \"Show flashing on taskbar apps\" with the Windows 10 taskbar"
+// Windows 11 exposes Settings > Personalization > Taskbar > Taskbar behaviors > "Show flashing on taskbar apps",
+// stored in HKCU\...\Explorer\Advanced\TaskbarFlashing. Only the XAML taskbar honors it, so when the Windows 10
+// taskbar (explorer's own or ep_taskbar) is in use, buttons keep flashing/turning orange even with it turned off.
+// When an app calls FlashWindow(Ex), win32k posts WM_SHELLHOOK with HSHELL_FLASH (HSHELL_REDRAW | HSHELL_HIGHBIT)
+// to the shell hook windows, which live on the tray thread. We intercept that posted message on the tray thread
+// and, if flashing is disabled, downgrade it to a plain HSHELL_REDRAW so the button is just repainted normally
+// (no flashing, no orange highlight, and no auto-hidden taskbar popping up).
+HHOOK Shell_TrayWndGetMessageHook = NULL;
+UINT g_uShellHookMsg = 0;
+
+static BOOL IsTaskbarFlashingDisabled()
+{
+    DWORD dwValue = 1, dwSize = sizeof(DWORD);
+    if (RegGetValueW(
+        HKEY_CURRENT_USER,
+        L"Software\\Microsoft\\Windows\\CurrentVersion\\Explorer\\Advanced",
+        L"TaskbarFlashing",
+        RRF_RT_REG_DWORD,
+        NULL,
+        &dwValue,
+        &dwSize) != ERROR_SUCCESS)
+    {
+        return FALSE; // Not set (e.g. Windows 10): keep the default behavior
+    }
+    return dwValue == 0;
+}
+
+LRESULT CALLBACK Shell_TrayWndGetMessageProc(int nCode, WPARAM wParam, LPARAM lParam)
+{
+    if (nCode == HC_ACTION && wParam == PM_REMOVE && lParam)
+    {
+        MSG* pMsg = (MSG*)lParam;
+        if (g_uShellHookMsg && pMsg->message == g_uShellHookMsg && pMsg->wParam == HSHELL_FLASH && IsTaskbarFlashingDisabled())
+        {
+            pMsg->wParam = HSHELL_REDRAW;
+        }
+    }
+    return CallNextHookEx(Shell_TrayWndGetMessageHook, nCode, wParam, lParam);
+}
+
+void Shell_TrayWnd_InstallFlashFilter(DWORD dwThreadId)
+{
+    if (Shell_TrayWndGetMessageHook || !bOldTaskbar)
+    {
+        return;
+    }
+    if (!g_uShellHookMsg)
+    {
+        g_uShellHookMsg = RegisterWindowMessageW(L"SHELLHOOK");
+    }
+    Shell_TrayWndGetMessageHook = SetWindowsHookExW(WH_GETMESSAGE, Shell_TrayWndGetMessageProc, NULL, dwThreadId);
+}
+
+void Shell_TrayWnd_RemoveFlashFilter()
+{
+    if (Shell_TrayWndGetMessageHook)
+    {
+        UnhookWindowsHookEx(Shell_TrayWndGetMessageHook);
+        Shell_TrayWndGetMessageHook = NULL;
+    }
+}
+#pragma endregion
+
 ITrayUIHost* g_pTrayUIHost;
 
 INT64 Shell_TrayWndSubclassProc(
@@ -1950,6 +2014,7 @@ INT64 Shell_TrayWndSubclassProc(
             if (bIsPrimaryTaskbar)
             {
                 UnhookWindowsHookEx(Shell_TrayWndMouseHook);
+                Shell_TrayWnd_RemoveFlashFilter();
             }
             RemoveWindowSubclass(hWnd, Shell_TrayWndSubclassProc, Shell_TrayWndSubclassProc);
             break;
@@ -7209,6 +7274,7 @@ HWND CreateWindowExWHook(
     {
         SetWindowSubclass(hWnd, Shell_TrayWndSubclassProc, Shell_TrayWndSubclassProc, TRUE);
         Shell_TrayWndMouseHook = SetWindowsHookExW(WH_MOUSE, Shell_TrayWndMouseProc, NULL, GetCurrentThreadId());
+        Shell_TrayWnd_InstallFlashFilter(GetCurrentThreadId());
     }
     else if (bIsExplorerProcess && (*((WORD*)&(lpClassName)+1)) && !wcscmp(lpClassName, L"Shell_SecondaryTrayWnd"))
     {
