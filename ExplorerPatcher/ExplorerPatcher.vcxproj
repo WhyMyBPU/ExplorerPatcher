@@ -234,6 +234,9 @@
       <ExcludedFromBuild Condition="'$(WithMainPatcher)'!='true'">true</ExcludedFromBuild>
     </ClCompile>
     <ClCompile Include="Localization.cpp" />
+    <ClCompile Include="MinimizeToTray.c">
+      <ExcludedFromBuild Condition="'$(WithMainPatcher)'!='true'">true</ExcludedFromBuild>
+    </ClCompile>
     <ClCompile Include="lvt.c">
       <ExcludedFromBuild Condition="'$(WithMainPatcher)'!='true'">true</ExcludedFromBuild>
     </ClCompile>
@@ -302,6 +305,7 @@
     <ClInclude Include="SettingsMonitor.h" />
     <ClInclude Include="StartExperience.h" />
     <ClInclude Include="StartMenu.h" />
+    <ClInclude Include="MinimizeToTray.h" />
     <ClInclude Include="StartupSound.h" />
     <ClInclude Include="symbols.h" />
     <ClInclude Include="TaskbarCenter.h" />

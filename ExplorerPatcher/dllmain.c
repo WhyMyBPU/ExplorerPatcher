@@ -201,6 +201,7 @@ BOOL g_bIsDesktopRaised = FALSE;
 #include "ArchiveMenu.h"
 #include "InputSwitch.h"
 #include "StartupSound.h"
+#include "MinimizeToTray.h"
 #include "StartMenu.h"
 #include "TaskbarCenter.h"
 #include "../libs/sws/SimpleWindowSwitcher/sws_WindowSwitcher.h"
@@ -6259,6 +6260,23 @@ void WINAPI LoadSettings(LPARAM lParam)
             &bTaskbarAutohideOnDoubleClick,
             &dwSize
         );
+#if WITH_MAIN_PATCHER
+        if (bIsExplorer)
+        {
+            // Applied live: no Explorer restart needed
+            DWORD bMinimizeToTray = FALSE;
+            dwSize = sizeof(DWORD);
+            RegQueryValueExW(
+                hKey,
+                TEXT("MinimizeToTray"),
+                0,
+                NULL,
+                &bMinimizeToTray,
+                &dwSize
+            );
+            MinimizeToTray_SetEnabled(bMinimizeToTray != 0);
+        }
+#endif
         dwTemp = ORB_STYLE_WINDOWS10;
         dwSize = sizeof(DWORD);
         RegQueryValueExW(

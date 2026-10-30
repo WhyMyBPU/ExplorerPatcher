@@ -655,6 +655,8 @@
 "DisableOfficeHotkeys"=dword:00000000
 ;b %R:1709% *
 "DisableWinFHotkey"=dword:00000000
+;b Minimize windows to the system tray by right-clicking their minimize button (also Ctrl+Alt+Down)
+"MinimizeToTray"=dword:00000000
 ;b %R:1710%
 ;"Virtualized_{D17F1E1A-5919-4427-8F89-A1A8503CA3EB}_DisableRoundedCorners"=dword:00000000
 [HKEY_CURRENT_USER\Software\ExplorerPatcher]

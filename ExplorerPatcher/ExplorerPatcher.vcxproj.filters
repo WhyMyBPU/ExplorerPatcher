@@ -42,6 +42,9 @@
     <ClInclude Include="StartupSound.h">
       <Filter>Header Files</Filter>
     </ClInclude>
+    <ClInclude Include="MinimizeToTray.h">
+      <Filter>Header Files</Filter>
+    </ClInclude>
     <ClInclude Include="dxgi_imp.h">
       <Filter>Header Files</Filter>
     </ClInclude>
@@ -236,6 +239,9 @@
       <Filter>Source Files</Filter>
     </ClCompile>
     <ClCompile Include="StartupSound.cpp">
+      <Filter>Source Files</Filter>
+    </ClCompile>
+    <ClCompile Include="MinimizeToTray.c">
       <Filter>Source Files</Filter>
     </ClCompile>
     <ClCompile Include="Taskbar10.cpp">

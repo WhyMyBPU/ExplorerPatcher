@@ -495,6 +495,8 @@
 "DisableOfficeHotkeys"=dword:00000000
 ;b %R:1709% *
 "DisableWinFHotkey"=dword:00000000
+;b Minimize windows to the system tray by right-clicking their minimize button (also Ctrl+Alt+Down)
+"MinimizeToTray"=dword:00000000
 [HKEY_CURRENT_USER\Software\Microsoft\Windows\CurrentVersion\Explorer\Advanced]
 ;c 6 %R:1715%
 ;x 256 %R:1716%
